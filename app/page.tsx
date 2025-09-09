@@ -56,12 +56,13 @@ export default function Home() {
   const [compNotes, setCompNotes] = useState('');
   
   // Research form state
-  const [resType, setResType] = useState<'link' | 'thought'>('link');
+  const [resType, setResType] = useState<'link' | 'thought'>('thought');
   const [resTitle, setResTitle] = useState('');
   const [resContent, setResContent] = useState('');
   const [resUrl, setResUrl] = useState('');
   const [resCategory, setResCategory] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [filterTag, setFilterTag] = useState<string>('all');
   
   const [loading, setLoading] = useState(false);
 
@@ -108,24 +109,38 @@ export default function Home() {
 
   const handleCompetitorSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!compCategoryId) return;
     
     setLoading(true);
 
+    // Build competitor data with both old and new schema fields
+    const competitorData: any = {
+      name: compName,
+      url: compUrl,
+      notes: compNotes || null
+    };
+
+    // Always include category string for backward compatibility
+    if (categories.length > 0 && compCategoryId) {
+      const selectedCategory = categories.find(c => c.id === compCategoryId);
+      competitorData.category = selectedCategory?.name || 'Direct Competitor';
+      competitorData.category_id = compCategoryId;
+    } else {
+      // Default category if no categories are loaded
+      competitorData.category = 'Direct Competitor';
+    }
+
     const { error } = await supabase
       .from('competitors')
-      .insert([{
-        name: compName,
-        url: compUrl,
-        category_id: compCategoryId,
-        notes: compNotes || null
-      }]);
+      .insert([competitorData]);
 
     if (!error) {
       setCompName('');
       setCompUrl('');
       setCompNotes('');
       await loadCompetitors();
+    } else {
+      console.error('Error saving competitor:', error);
+      alert('Failed to save competitor. Please try again.');
     }
     setLoading(false);
   };
@@ -137,11 +152,11 @@ export default function Home() {
     const { data: researchData, error: researchError } = await supabase
       .from('research')
       .insert([{
-        type: resType,
-        title: resTitle,
+        type: 'thought',
+        title: resContent.substring(0, 50) + (resContent.length > 50 ? '...' : ''),
         content: resContent,
-        url: resType === 'link' ? resUrl : null,
-        category: resCategory || null
+        url: null,
+        category: null
       }])
       .select()
       .single();
@@ -158,10 +173,7 @@ export default function Home() {
     }
 
     if (!researchError) {
-      setResTitle('');
       setResContent('');
-      setResUrl('');
-      setResCategory('');
       setSelectedTags([]);
       await loadResearch();
     }
@@ -182,6 +194,20 @@ export default function Home() {
     ? competitors 
     : competitors.filter(c => c.category_id === selectedCategory);
 
+  const filteredResearch = filterTag === 'all'
+    ? research
+    : research.filter(item => 
+        item.research_tags?.some(rt => rt.tags?.id === filterTag)
+      );
+
+  const allTags = Array.from(new Set(
+    research.flatMap(item => 
+      item.research_tags?.map(rt => rt.tags).filter(Boolean) || []
+    )
+  )).filter((tag, index, self) => 
+    index === self.findIndex(t => t?.id === tag?.id)
+  );
+
   return (
     <div className="max-w-6xl mx-auto p-4">
       <h1 className="text-2xl font-bold mb-8">board</h1>
@@ -197,7 +223,7 @@ export default function Home() {
           onClick={() => setActiveTab('research')}
           className={`pb-2 px-1 ${activeTab === 'research' ? 'border-b-2 border-black font-semibold' : ''}`}
         >
-          Research & Thoughts
+          Thoughts
         </button>
       </div>
 
@@ -244,17 +270,27 @@ export default function Home() {
                 className="p-2 border rounded"
               />
 
-              <select
-                value={compCategoryId}
-                onChange={(e) => setCompCategoryId(e.target.value)}
-                className="p-2 border rounded"
-                required
-              >
-                <option value="">Select Category</option>
-                {categories.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
+              {categories.length > 0 ? (
+                <select
+                  value={compCategoryId}
+                  onChange={(e) => setCompCategoryId(e.target.value)}
+                  className="p-2 border rounded"
+                  required
+                >
+                  <option value="">Select Category</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value="Direct Competitor"
+                  disabled
+                  className="p-2 border rounded bg-gray-100"
+                  title="Categories not available - using default"
+                />
+              )}
 
               <textarea
                 placeholder="Notes (optional)"
@@ -292,10 +328,13 @@ export default function Home() {
               <div key={competitor.id} className="p-4 border rounded">
                 <div className="flex justify-between items-start mb-2">
                   <span 
-                    className="text-xs px-2 py-1 rounded text-white"
-                    style={{ backgroundColor: competitor.categories?.color || '#6B7280' }}
+                    className="text-xs px-2 py-1 rounded"
+                    style={{ 
+                      backgroundColor: competitor.categories?.color || '#3B82F6',
+                      color: competitor.categories?.color ? 'white' : 'white'
+                    }}
                   >
-                    {competitor.categories?.name || 'Uncategorized'}
+                    {competitor.categories?.name || competitor.category || 'Uncategorized'}
                   </span>
                   <button 
                     onClick={() => deleteCompetitor(competitor.id)}
@@ -330,95 +369,58 @@ export default function Home() {
       ) : (
         <>
           <form onSubmit={handleResearchSubmit} className="mb-8 p-4 border rounded">
-            <h3 className="font-semibold mb-4">Add Research</h3>
-            
-            <div className="mb-4">
-              <label className="block mb-2">
-                Type:
-                <select 
-                  value={resType} 
-                  onChange={(e) => setResType(e.target.value as 'link' | 'thought')}
-                  className="ml-2 p-1 border rounded"
-                >
-                  <option value="link">Link</option>
-                  <option value="thought">Thought</option>
-                </select>
-              </label>
-            </div>
-
-            <input
-              type="text"
-              placeholder="Title"
-              value={resTitle}
-              onChange={(e) => setResTitle(e.target.value)}
-              required
-              className="w-full p-2 mb-2 border rounded"
-            />
-
-            {resType === 'link' && (
-              <input
-                type="url"
-                placeholder="URL"
-                value={resUrl}
-                onChange={(e) => setResUrl(e.target.value)}
-                required
-                className="w-full p-2 mb-2 border rounded"
-              />
-            )}
+            <h3 className="font-semibold mb-4">Add Thought</h3>
 
             <textarea
-              placeholder={resType === 'link' ? 'Notes about this link' : 'Your thoughts...'}
+              placeholder="What's on your mind?"
               value={resContent}
               onChange={(e) => setResContent(e.target.value)}
               required
-              rows={3}
-              className="w-full p-2 mb-2 border rounded"
+              rows={4}
+              className="w-full p-2 mb-3 border rounded"
             />
 
-            <input
-              type="text"
-              placeholder="Category (optional)"
-              value={resCategory}
-              onChange={(e) => setResCategory(e.target.value)}
-              className="w-full p-2 mb-2 border rounded"
-            />
-
-            {resType === 'thought' && (
-              <div className="mb-2">
-                <label className="block text-sm font-medium mb-1">Tags:</label>
-                <TagInput 
-                  selectedTags={selectedTags}
-                  onTagsChange={setSelectedTags}
-                />
-              </div>
-            )}
+            <div className="mb-3">
+              <label className="block text-sm font-medium mb-1">Tags:</label>
+              <TagInput 
+                selectedTags={selectedTags}
+                onTagsChange={setSelectedTags}
+              />
+            </div>
 
             <button 
               type="submit" 
               disabled={loading}
               className="px-4 py-2 bg-black text-white rounded disabled:opacity-50"
             >
-              {loading ? 'Saving...' : 'Save'}
+              {loading ? 'Saving...' : 'Save Thought'}
             </button>
           </form>
 
+          <div className="mb-4">
+            <select
+              value={filterTag}
+              onChange={(e) => setFilterTag(e.target.value)}
+              className="p-2 border rounded"
+            >
+              <option value="all">All Tags</option>
+              {allTags.map(tag => tag && (
+                <option key={tag.id} value={tag.id}>
+                  {tag.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="space-y-4">
-            {research.map((item) => (
+            {filteredResearch.map((item) => (
               <div key={item.id} className="p-4 border rounded">
                 <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <span className="text-xs px-2 py-1 bg-gray-100 rounded mr-2">
-                      {item.type}
-                    </span>
-                    {item.category && (
-                      <span className="text-xs px-2 py-1 bg-blue-100 rounded mr-2">
-                        {item.category}
-                      </span>
-                    )}
+                  <div className="flex flex-wrap gap-1">
                     {item.research_tags?.map(rt => rt.tags).filter(Boolean).map((tag: Tag) => (
                       <span
                         key={tag.id}
-                        className="text-xs px-2 py-1 rounded text-white mr-1"
+                        className="text-xs px-2 py-1 rounded text-white"
                         style={{ backgroundColor: tag.color }}
                       >
                         {tag.name}
@@ -427,24 +429,11 @@ export default function Home() {
                   </div>
                   <button 
                     onClick={() => deleteResearch(item.id)}
-                    className="text-red-500 text-sm"
+                    className="text-red-500 text-sm ml-2"
                   >
-                    Delete
+                    ×
                   </button>
                 </div>
-                
-                <h3 className="font-semibold mb-1">{item.title}</h3>
-                
-                {item.url && (
-                  <a 
-                    href={item.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-blue-500 underline text-sm block mb-2"
-                  >
-                    {item.url}
-                  </a>
-                )}
                 
                 <p className="text-gray-700 whitespace-pre-wrap">{item.content}</p>
                 
