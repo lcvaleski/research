@@ -2,14 +2,31 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import CategoryManager from '@/components/CategoryManager';
+import TagInput from '@/components/TagInput';
+
+type Category = {
+  id: string;
+  name: string;
+  description?: string;
+  color: string;
+};
 
 type Competitor = {
   id: string;
   name: string;
   url: string;
-  category: string;
+  category?: string;
+  category_id?: string;
+  categories?: Category;
   notes?: string;
   created_at: string;
+};
+
+type Tag = {
+  id: string;
+  name: string;
+  color: string;
 };
 
 type Research = {
@@ -20,31 +37,22 @@ type Research = {
   url?: string;
   category?: string;
   created_at: string;
+  research_tags?: { tags: Tag }[];
 };
 
-const COMPETITOR_CATEGORIES = [
-  'Direct Competitor',
-  'Indirect Competitor',
-  'Potential Competitor',
-  'Adjacent Market',
-  'Enterprise',
-  'SMB',
-  'Consumer',
-  'Platform',
-  'Tool',
-  'Service'
-];
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'competitors' | 'research'>('competitors');
   const [competitors, setCompetitors] = useState<Competitor[]>([]);
   const [research, setResearch] = useState<Research[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
   
   // Competitor form state
   const [compName, setCompName] = useState('');
   const [compUrl, setCompUrl] = useState('');
-  const [compCategory, setCompCategory] = useState('Direct Competitor');
+  const [compCategoryId, setCompCategoryId] = useState<string>('');
   const [compNotes, setCompNotes] = useState('');
   
   // Research form state
@@ -53,20 +61,37 @@ export default function Home() {
   const [resContent, setResContent] = useState('');
   const [resUrl, setResUrl] = useState('');
   const [resCategory, setResCategory] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   
   const [loading, setLoading] = useState(false);
 
   const supabase = createClient();
 
   useEffect(() => {
+    loadCategories();
     loadCompetitors();
     loadResearch();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (categories.length > 0 && !compCategoryId) {
+      setCompCategoryId(categories[0].id);
+    }
+  }, [categories]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadCategories = async () => {
+    const { data } = await supabase
+      .from('categories')
+      .select('*')
+      .order('name');
+    
+    if (data) setCategories(data);
+  };
+
   const loadCompetitors = async () => {
     const { data } = await supabase
       .from('competitors')
-      .select('*')
+      .select('*, categories(*)')
       .order('created_at', { ascending: false });
     
     if (data) setCompetitors(data);
@@ -75,7 +100,7 @@ export default function Home() {
   const loadResearch = async () => {
     const { data } = await supabase
       .from('research')
-      .select('*')
+      .select('*, research_tags(tags(*))')
       .order('created_at', { ascending: false });
     
     if (data) setResearch(data);
@@ -83,6 +108,8 @@ export default function Home() {
 
   const handleCompetitorSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!compCategoryId) return;
+    
     setLoading(true);
 
     const { error } = await supabase
@@ -90,7 +117,7 @@ export default function Home() {
       .insert([{
         name: compName,
         url: compUrl,
-        category: compCategory,
+        category_id: compCategoryId,
         notes: compNotes || null
       }]);
 
@@ -107,7 +134,7 @@ export default function Home() {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase
+    const { data: researchData, error: researchError } = await supabase
       .from('research')
       .insert([{
         type: resType,
@@ -115,13 +142,27 @@ export default function Home() {
         content: resContent,
         url: resType === 'link' ? resUrl : null,
         category: resCategory || null
-      }]);
+      }])
+      .select()
+      .single();
 
-    if (!error) {
+    if (!researchError && researchData && selectedTags.length > 0) {
+      const tagInserts = selectedTags.map(tagId => ({
+        research_id: researchData.id,
+        tag_id: tagId
+      }));
+      
+      await supabase
+        .from('research_tags')
+        .insert(tagInserts);
+    }
+
+    if (!researchError) {
       setResTitle('');
       setResContent('');
       setResUrl('');
       setResCategory('');
+      setSelectedTags([]);
       await loadResearch();
     }
     setLoading(false);
@@ -139,13 +180,11 @@ export default function Home() {
 
   const filteredCompetitors = selectedCategory === 'all' 
     ? competitors 
-    : competitors.filter(c => c.category === selectedCategory);
-
-  const uniqueCategories = Array.from(new Set(competitors.map(c => c.category)));
+    : competitors.filter(c => c.category_id === selectedCategory);
 
   return (
     <div className="max-w-6xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-8">Startup Research Board</h1>
+      <h1 className="text-2xl font-bold mb-8">board</h1>
       
       <div className="flex gap-4 mb-6 border-b">
         <button
@@ -164,6 +203,25 @@ export default function Home() {
 
       {activeTab === 'competitors' ? (
         <>
+          <div className="flex justify-between items-center mb-4">
+            <button
+              onClick={() => setShowCategoryManager(!showCategoryManager)}
+              className="px-3 py-1 text-sm bg-gray-200 rounded"
+            >
+              {showCategoryManager ? 'Hide' : 'Manage'} Categories
+            </button>
+          </div>
+          
+          {showCategoryManager && (
+            <CategoryManager 
+              categories={categories} 
+              onCategoriesChange={() => {
+                loadCategories();
+                loadCompetitors();
+              }}
+            />
+          )}
+
           <form onSubmit={handleCompetitorSubmit} className="mb-8 p-4 border rounded">
             <h3 className="font-semibold mb-4">Add Competitor</h3>
             
@@ -187,12 +245,14 @@ export default function Home() {
               />
 
               <select
-                value={compCategory}
-                onChange={(e) => setCompCategory(e.target.value)}
+                value={compCategoryId}
+                onChange={(e) => setCompCategoryId(e.target.value)}
                 className="p-2 border rounded"
+                required
               >
-                {COMPETITOR_CATEGORIES.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+                <option value="">Select Category</option>
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
 
@@ -221,8 +281,8 @@ export default function Home() {
               className="p-2 border rounded"
             >
               <option value="all">All Categories</option>
-              {uniqueCategories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
             </select>
           </div>
@@ -231,8 +291,11 @@ export default function Home() {
             {filteredCompetitors.map((competitor) => (
               <div key={competitor.id} className="p-4 border rounded">
                 <div className="flex justify-between items-start mb-2">
-                  <span className="text-xs px-2 py-1 bg-blue-100 rounded">
-                    {competitor.category}
+                  <span 
+                    className="text-xs px-2 py-1 rounded text-white"
+                    style={{ backgroundColor: competitor.categories?.color || '#6B7280' }}
+                  >
+                    {competitor.categories?.name || 'Uncategorized'}
                   </span>
                   <button 
                     onClick={() => deleteCompetitor(competitor.id)}
@@ -320,6 +383,16 @@ export default function Home() {
               className="w-full p-2 mb-2 border rounded"
             />
 
+            {resType === 'thought' && (
+              <div className="mb-2">
+                <label className="block text-sm font-medium mb-1">Tags:</label>
+                <TagInput 
+                  selectedTags={selectedTags}
+                  onTagsChange={setSelectedTags}
+                />
+              </div>
+            )}
+
             <button 
               type="submit" 
               disabled={loading}
@@ -338,10 +411,19 @@ export default function Home() {
                       {item.type}
                     </span>
                     {item.category && (
-                      <span className="text-xs px-2 py-1 bg-blue-100 rounded">
+                      <span className="text-xs px-2 py-1 bg-blue-100 rounded mr-2">
                         {item.category}
                       </span>
                     )}
+                    {item.research_tags?.map(rt => rt.tags).filter(Boolean).map((tag: Tag) => (
+                      <span
+                        key={tag.id}
+                        className="text-xs px-2 py-1 rounded text-white mr-1"
+                        style={{ backgroundColor: tag.color }}
+                      >
+                        {tag.name}
+                      </span>
+                    ))}
                   </div>
                   <button 
                     onClick={() => deleteResearch(item.id)}
