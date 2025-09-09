@@ -24,7 +24,7 @@ export default function TagInput({ selectedTags, onTagsChange }: TagInputProps) 
 
   useEffect(() => {
     loadTags();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadTags = async () => {
     const { data } = await supabase
@@ -146,7 +146,7 @@ export default function TagInput({ selectedTags, onTagsChange }: TagInputProps) 
       
       {showDropdown && inputValue && filteredTags.length === 0 && (
         <div className="absolute z-10 w-full mt-1 bg-white border rounded shadow-lg p-3 text-sm text-gray-600">
-          Press Enter to create "{inputValue}"
+          Press Enter to create &quot;{inputValue}&quot;
         </div>
       )}
     </div>
