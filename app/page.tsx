@@ -56,11 +56,7 @@ export default function Home() {
   const [compNotes, setCompNotes] = useState('');
   
   // Research form state
-  const [resType, setResType] = useState<'link' | 'thought'>('thought');
-  const [resTitle, setResTitle] = useState('');
   const [resContent, setResContent] = useState('');
-  const [resUrl, setResUrl] = useState('');
-  const [resCategory, setResCategory] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [filterTag, setFilterTag] = useState<string>('all');
   
@@ -113,7 +109,7 @@ export default function Home() {
     setLoading(true);
 
     // Build competitor data with both old and new schema fields
-    const competitorData: any = {
+    const competitorData: Record<string, string | null> = {
       name: compName,
       url: compUrl,
       notes: compNotes || null
