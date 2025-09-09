@@ -1,5 +1,16 @@
--- Create posts table for research links and thoughts
-CREATE TABLE IF NOT EXISTS posts (
+-- Create competitors table
+CREATE TABLE IF NOT EXISTS competitors (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  url TEXT NOT NULL,
+  category TEXT NOT NULL,
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create research links and thoughts table
+CREATE TABLE IF NOT EXISTS research (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   type TEXT NOT NULL CHECK (type IN ('link', 'thought')),
   title TEXT NOT NULL,
@@ -10,16 +21,24 @@ CREATE TABLE IF NOT EXISTS posts (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create index for faster queries
-CREATE INDEX IF NOT EXISTS posts_type_idx ON posts(type);
-CREATE INDEX IF NOT EXISTS posts_created_at_idx ON posts(created_at DESC);
+-- Create indexes for faster queries
+CREATE INDEX IF NOT EXISTS competitors_category_idx ON competitors(category);
+CREATE INDEX IF NOT EXISTS competitors_created_at_idx ON competitors(created_at DESC);
+CREATE INDEX IF NOT EXISTS research_type_idx ON research(type);
+CREATE INDEX IF NOT EXISTS research_created_at_idx ON research(created_at DESC);
 
 -- Enable Row Level Security
-ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE competitors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE research ENABLE ROW LEVEL SECURITY;
 
--- Create a policy that allows all operations (for simplicity)
+-- Create policies that allow all operations (for simplicity)
 -- In production, you'd want more restrictive policies
-CREATE POLICY "Allow all operations" ON posts
+CREATE POLICY "Allow all operations" ON competitors
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
+
+CREATE POLICY "Allow all operations" ON research
   FOR ALL
   USING (true)
   WITH CHECK (true);

@@ -1,6 +1,6 @@
-# Research Board
+# Startup Research Board
 
-A brutally simple research board for startup founders to save links and thoughts.
+A brutally simple research board for startup founders to track competitors and save research links/thoughts.
 
 ## Setup
 
@@ -12,11 +12,22 @@ A brutally simple research board for startup founders to save links and thoughts
 
 ### 2. Set up the Database
 
-Run this SQL in your Supabase SQL editor:
+Run this SQL in your Supabase SQL editor (copy the entire script from `/supabase/schema.sql` or use this):
 
 ```sql
--- Create posts table
-CREATE TABLE IF NOT EXISTS posts (
+-- Create competitors table
+CREATE TABLE IF NOT EXISTS competitors (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  url TEXT NOT NULL,
+  category TEXT NOT NULL,
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create research links and thoughts table
+CREATE TABLE IF NOT EXISTS research (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   type TEXT NOT NULL CHECK (type IN ('link', 'thought')),
   title TEXT NOT NULL,
@@ -28,17 +39,21 @@ CREATE TABLE IF NOT EXISTS posts (
 );
 
 -- Create indexes
-CREATE INDEX IF NOT EXISTS posts_type_idx ON posts(type);
-CREATE INDEX IF NOT EXISTS posts_created_at_idx ON posts(created_at DESC);
+CREATE INDEX IF NOT EXISTS competitors_category_idx ON competitors(category);
+CREATE INDEX IF NOT EXISTS competitors_created_at_idx ON competitors(created_at DESC);
+CREATE INDEX IF NOT EXISTS research_type_idx ON research(type);
+CREATE INDEX IF NOT EXISTS research_created_at_idx ON research(created_at DESC);
 
 -- Enable RLS
-ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE competitors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE research ENABLE ROW LEVEL SECURITY;
 
 -- Allow all operations (for simplicity)
-CREATE POLICY "Allow all operations" ON posts
-  FOR ALL
-  USING (true)
-  WITH CHECK (true);
+CREATE POLICY "Allow all operations" ON competitors
+  FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow all operations" ON research
+  FOR ALL USING (true) WITH CHECK (true);
 ```
 
 ### 3. Configure Environment Variables
@@ -67,8 +82,17 @@ npm run dev
 
 ## Features
 
-- Add links with notes
-- Add general thoughts
-- Optional categories for organization
-- Delete posts
-- Brutally simple, no authentication (add if needed)
+### Competitors Tab
+- Track competitor companies with name and website
+- Categorize competitors (Direct, Indirect, Potential, Adjacent Market, etc.)
+- Add notes about each competitor
+- Filter by category
+- Grid view for easy scanning
+
+### Research & Thoughts Tab
+- Save research links with notes
+- Add general thoughts and ideas
+- Optional categorization
+- Chronological feed view
+
+Brutally simple, no authentication (add if needed)
