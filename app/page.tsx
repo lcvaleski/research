@@ -61,7 +61,7 @@ export default function Home() {
   useEffect(() => {
     loadCompetitors();
     loadResearch();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadCompetitors = async () => {
     const { data } = await supabase
