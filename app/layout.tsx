@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Startup Research Board",
-  description: "Track competitors and research for your startup",
+  title: "board",
+  description: "Track competitors and thoughts",
 };
 
 export default function RootLayout({
