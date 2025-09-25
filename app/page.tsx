@@ -23,10 +23,18 @@ type Research = {
 };
 
 
+type Invitation = {
+  id: string;
+  content: string;
+  created_at: string;
+};
+
+
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'competitors' | 'research'>('research');
+  const [activeTab, setActiveTab] = useState<'competitors' | 'research' | 'invitations'>('research');
   const [competitors, setCompetitors] = useState<Competitor[]>([]);
   const [research, setResearch] = useState<Research[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
   
   // Competitor form state
   const [compName, setCompName] = useState('');
@@ -35,16 +43,21 @@ export default function Home() {
   
   // Research form state
   const [resContent, setResContent] = useState('');
+
+  // Invitation form state
+  const [invContent, setInvContent] = useState('');
   
   const [loading, setLoading] = useState(false);
   const [showCompetitorForm, setShowCompetitorForm] = useState(false);
   const [showThoughtsForm, setShowThoughtsForm] = useState(false);
+  const [showInvitationForm, setShowInvitationForm] = useState(false);
 
   const supabase = createClient();
 
   useEffect(() => {
     loadCompetitors();
     loadResearch();
+    loadInvitations();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
 
@@ -62,8 +75,17 @@ export default function Home() {
       .from('research')
       .select('*')
       .order('created_at', { ascending: false });
-    
+
     if (data) setResearch(data);
+  };
+
+  const loadInvitations = async () => {
+    const { data } = await supabase
+      .from('invitations')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (data) setInvitations(data);
   };
 
   const handleCompetitorSubmit = async (e: React.FormEvent) => {
@@ -115,6 +137,22 @@ export default function Home() {
     setLoading(false);
   };
 
+  const handleInvitationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const { error } = await supabase
+      .from('invitations')
+      .insert([{ content: invContent }]);
+
+    if (!error) {
+      setInvContent('');
+      setShowInvitationForm(false);
+      await loadInvitations();
+    }
+    setLoading(false);
+  };
+
   const deleteCompetitor = async (id: string) => {
     await supabase.from('competitors').delete().eq('id', id);
     await loadCompetitors();
@@ -123,6 +161,11 @@ export default function Home() {
   const deleteResearch = async (id: string) => {
     await supabase.from('research').delete().eq('id', id);
     await loadResearch();
+  };
+
+  const deleteInvitation = async (id: string) => {
+    await supabase.from('invitations').delete().eq('id', id);
+    await loadInvitations();
   };
 
 
@@ -142,9 +185,69 @@ export default function Home() {
         >
           Thoughts
         </button>
+        <button
+          onClick={() => setActiveTab('invitations')}
+          className={`pb-2 px-1 ${activeTab === 'invitations' ? 'border-b-2 border-black font-semibold' : ''}`}
+        >
+          Invitations
+        </button>
       </div>
 
-      {activeTab === 'competitors' ? (
+      {activeTab === 'invitations' ? (
+        <>
+          <div className="mb-8">
+            <button
+              onClick={() => setShowInvitationForm(!showInvitationForm)}
+              className="flex items-center gap-2 p-2 text-lg font-semibold hover:bg-gray-50 rounded"
+            >
+              <span className={`transform transition-transform ${showInvitationForm ? 'rotate-45' : ''}`}>+</span>
+              Add Content Idea
+            </button>
+
+            {showInvitationForm && (
+              <form onSubmit={handleInvitationSubmit} className="mt-4 p-4 border rounded">
+                <textarea
+                  placeholder="Content idea..."
+                  value={invContent}
+                  onChange={(e) => setInvContent(e.target.value)}
+                  required
+                  rows={4}
+                  className="w-full p-2 mb-3 border rounded"
+                />
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-4 py-2 bg-black text-white rounded disabled:opacity-50"
+                >
+                  {loading ? 'Saving...' : 'Save Idea'}
+                </button>
+              </form>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            {invitations.map((item) => (
+              <div key={item.id} className="p-4 border rounded">
+                <div className="flex justify-between items-start mb-2">
+                  <button
+                    onClick={() => deleteInvitation(item.id)}
+                    className="text-red-500 text-sm ml-auto"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <p className="text-gray-700 whitespace-pre-wrap">{item.content}</p>
+
+                <p className="text-xs text-gray-400 mt-2">
+                  {new Date(item.created_at).toLocaleString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : activeTab === 'competitors' ? (
         <>
 
           <div className="mb-8">
