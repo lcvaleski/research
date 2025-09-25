@@ -313,15 +313,20 @@ export default function Home() {
                   </button>
                 </div>
                 
-                <h3 className="font-semibold mb-1">{competitor.name}</h3>
-                
-                <a 
-                  href={competitor.url} 
-                  target="_blank" 
+                <a
+                  href={competitor.url}
+                  target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-500 underline text-sm block mb-2"
+                  className="font-semibold mb-1 text-blue-500 hover:underline block break-words"
+                  style={{
+                    display: '-webkit-box',
+                    WebkitLineClamp: 100,
+                    WebkitBoxOrient: 'vertical',
+                    wordBreak: 'break-all',
+                    maxWidth: '70ch'
+                  }}
                 >
-                  {competitor.url}
+                  {competitor.name}
                 </a>
                 
                 {competitor.notes && (
