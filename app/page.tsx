@@ -31,7 +31,7 @@ type Invitation = {
 
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'competitors' | 'research' | 'invitations'>('research');
+  const [activeTab, setActiveTab] = useState<'competitors' | 'research' | 'invitations' | 'timeline'>('research');
   const [competitors, setCompetitors] = useState<Competitor[]>([]);
   const [research, setResearch] = useState<Research[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
@@ -191,6 +191,12 @@ export default function Home() {
         >
           Invitations
         </button>
+        <button
+          onClick={() => setActiveTab('timeline')}
+          className={`pb-2 px-1 ${activeTab === 'timeline' ? 'border-b-2 border-black font-semibold' : ''}`}
+        >
+          Timeline
+        </button>
       </div>
 
       {activeTab === 'invitations' ? (
@@ -338,6 +344,59 @@ export default function Home() {
                 </p>
               </div>
             ))}
+          </div>
+        </>
+      ) : activeTab === 'timeline' ? (
+        <>
+          <div className="p-4">
+            <div className="flex flex-col items-center">
+              {/* Past weeks */}
+              <div className="border-2 border-gray-300 rounded-lg px-6 py-3 mb-0 bg-gray-50">
+                <p className="text-center font-medium">Week 1: Ideation</p>
+              </div>
+              <div className="w-0.5 h-8 bg-gray-300"></div>
+
+              <div className="border-2 border-gray-300 rounded-lg px-6 py-3 mb-0 bg-gray-50">
+                <p className="text-center font-medium">Week 2: Ideation</p>
+              </div>
+              <div className="w-0.5 h-8 bg-gray-300"></div>
+
+              <div className="border-2 border-gray-300 rounded-lg px-6 py-3 mb-0 bg-gray-50">
+                <p className="text-center font-medium">Week 3: Ideation</p>
+              </div>
+              <div className="w-0.5 h-8 bg-gray-300"></div>
+
+              <div className="border-2 border-gray-300 rounded-lg px-6 py-3 mb-0 bg-gray-50">
+                <p className="text-center font-medium">Week 4: Ideation</p>
+              </div>
+              <div className="w-0.5 h-8 bg-gray-300"></div>
+
+              {/* Current week - highlighted */}
+              <div className="border-2 border-black rounded-lg px-8 py-4 mb-0 bg-yellow-50">
+                <p className="text-center font-semibold text-lg">Week 5: Ideation (Current)</p>
+              </div>
+              <div className="w-0.5 h-8 bg-gray-400"></div>
+
+              {/* Future weeks */}
+              <div className="border-2 border-blue-400 rounded-lg px-6 py-3 mb-0 bg-blue-50">
+                <p className="text-center font-medium">Week 6: Invitation Content</p>
+              </div>
+              <div className="w-0.5 h-8 bg-gray-400"></div>
+
+              <div className="border-2 border-blue-400 rounded-lg px-6 py-3 mb-0 bg-blue-50">
+                <p className="text-center font-medium">Week 7: Invitation Content</p>
+              </div>
+              <div className="w-0.5 h-8 bg-gray-400"></div>
+
+              <div className="border-2 border-green-500 rounded-lg px-6 py-3 mb-0 bg-green-50">
+                <p className="text-center font-medium">Week 8: MVP Creation</p>
+              </div>
+              <div className="w-0.5 h-8 bg-gray-400"></div>
+
+              <div className="border-2 border-green-500 rounded-lg px-6 py-3 mb-0 bg-green-50">
+                <p className="text-center font-medium">Week 9: MVP Creation</p>
+              </div>
+            </div>
           </div>
         </>
       ) : (
