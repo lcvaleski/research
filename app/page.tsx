@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 
@@ -30,11 +30,34 @@ type Invitation = {
 };
 
 
+type Artist = {
+  id: string;
+  name: string;
+  profile_url: string;
+  specialty?: string;
+  notes?: string;
+  created_at: string;
+};
+
+
+type SME = {
+  id: string;
+  name: string;
+  profile_url: string;
+  expertise?: string;
+  organization?: string;
+  notes?: string;
+  created_at: string;
+};
+
+
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'competitors' | 'research' | 'invitations' | 'timeline'>('research');
+  const [activeTab, setActiveTab] = useState<'competitors' | 'research' | 'invitations' | 'timeline' | 'artists' | 'sme'>('research');
   const [competitors, setCompetitors] = useState<Competitor[]>([]);
   const [research, setResearch] = useState<Research[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [artists, setArtists] = useState<Artist[]>([]);
+  const [smeList, setSmeList] = useState<SME[]>([]);
   
   // Competitor form state
   const [compName, setCompName] = useState('');
@@ -46,11 +69,26 @@ export default function Home() {
 
   // Invitation form state
   const [invContent, setInvContent] = useState('');
-  
+
+  // Artist form state
+  const [artistName, setArtistName] = useState('');
+  const [artistUrl, setArtistUrl] = useState('');
+  const [artistSpecialty, setArtistSpecialty] = useState('');
+  const [artistNotes, setArtistNotes] = useState('');
+
+  // SME form state
+  const [smeName, setSmeName] = useState('');
+  const [smeUrl, setSmeUrl] = useState('');
+  const [smeExpertise, setSmeExpertise] = useState('');
+  const [smeOrganization, setSmeOrganization] = useState('');
+  const [smeNotes, setSmeNotes] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [showCompetitorForm, setShowCompetitorForm] = useState(false);
   const [showThoughtsForm, setShowThoughtsForm] = useState(false);
   const [showInvitationForm, setShowInvitationForm] = useState(false);
+  const [showArtistForm, setShowArtistForm] = useState(false);
+  const [showSmeForm, setShowSmeForm] = useState(false);
 
   const supabase = createClient();
 
@@ -58,6 +96,8 @@ export default function Home() {
     loadCompetitors();
     loadResearch();
     loadInvitations();
+    loadArtists();
+    loadSmeList();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
 
@@ -86,6 +126,24 @@ export default function Home() {
       .order('created_at', { ascending: false });
 
     if (data) setInvitations(data);
+  };
+
+  const loadArtists = async () => {
+    const { data } = await supabase
+      .from('artists')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (data) setArtists(data);
+  };
+
+  const loadSmeList = async () => {
+    const { data } = await supabase
+      .from('sme')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (data) setSmeList(data);
   };
 
   const handleCompetitorSubmit = async (e: React.FormEvent) => {
@@ -168,6 +226,66 @@ export default function Home() {
     await loadInvitations();
   };
 
+  const handleArtistSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const { error } = await supabase
+      .from('artists')
+      .insert([{
+        name: artistName,
+        profile_url: artistUrl,
+        specialty: artistSpecialty || null,
+        notes: artistNotes || null
+      }]);
+
+    if (!error) {
+      setArtistName('');
+      setArtistUrl('');
+      setArtistSpecialty('');
+      setArtistNotes('');
+      setShowArtistForm(false);
+      await loadArtists();
+    }
+    setLoading(false);
+  };
+
+  const handleSmeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const { error } = await supabase
+      .from('sme')
+      .insert([{
+        name: smeName,
+        profile_url: smeUrl,
+        expertise: smeExpertise || null,
+        organization: smeOrganization || null,
+        notes: smeNotes || null
+      }]);
+
+    if (!error) {
+      setSmeName('');
+      setSmeUrl('');
+      setSmeExpertise('');
+      setSmeOrganization('');
+      setSmeNotes('');
+      setShowSmeForm(false);
+      await loadSmeList();
+    }
+    setLoading(false);
+  };
+
+  const deleteArtist = async (id: string) => {
+    await supabase.from('artists').delete().eq('id', id);
+    await loadArtists();
+  };
+
+  const deleteSme = async (id: string) => {
+    await supabase.from('sme').delete().eq('id', id);
+    await loadSmeList();
+  };
+
 
   return (
     <div className="max-w-6xl mx-auto p-4">
@@ -196,6 +314,18 @@ export default function Home() {
           className={`pb-2 px-1 ${activeTab === 'timeline' ? 'border-b-2 border-black font-semibold' : ''}`}
         >
           Timeline
+        </button>
+        <button
+          onClick={() => setActiveTab('artists')}
+          className={`pb-2 px-1 ${activeTab === 'artists' ? 'border-b-2 border-black font-semibold' : ''}`}
+        >
+          Artists
+        </button>
+        <button
+          onClick={() => setActiveTab('sme')}
+          className={`pb-2 px-1 ${activeTab === 'sme' ? 'border-b-2 border-black font-semibold' : ''}`}
+        >
+          SME
         </button>
       </div>
 
@@ -350,53 +480,272 @@ export default function Home() {
         <>
           <div className="p-4">
             <div className="flex flex-col items-center">
-              {/* Past weeks */}
-              <div className="border-2 border-gray-300 rounded-lg px-6 py-3 mb-0 bg-gray-50">
-                <p className="text-center font-medium">Week 1: Ideation</p>
-              </div>
-              <div className="w-0.5 h-8 bg-gray-300"></div>
+              {(() => {
+                const startDate = new Date('2025-09-01'); // Project start date
+                const today = new Date();
+                const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+                const totalWeeks = Math.ceil((today.getTime() - startDate.getTime()) / msPerWeek);
 
-              <div className="border-2 border-gray-300 rounded-lg px-6 py-3 mb-0 bg-gray-50">
-                <p className="text-center font-medium">Week 2: Ideation</p>
-              </div>
-              <div className="w-0.5 h-8 bg-gray-300"></div>
+                const weeks = [];
 
-              <div className="border-2 border-gray-300 rounded-lg px-6 py-3 mb-0 bg-gray-50">
-                <p className="text-center font-medium">Week 3: Ideation</p>
-              </div>
-              <div className="w-0.5 h-8 bg-gray-300"></div>
+                for (let i = 1; i <= totalWeeks; i++) {
+                  const weekStart = new Date(startDate.getTime() + (i - 1) * msPerWeek);
+                  const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
+                  const isCurrentWeek = today >= weekStart && today <= weekEnd;
 
-              <div className="border-2 border-gray-300 rounded-lg px-6 py-3 mb-0 bg-gray-50">
-                <p className="text-center font-medium">Week 4: Ideation</p>
-              </div>
-              <div className="w-0.5 h-8 bg-gray-300"></div>
+                  weeks.push(
+                    <React.Fragment key={i}>
+                      <div className={`border-2 ${isCurrentWeek ? 'border-black' : 'border-gray-300'} rounded-lg px-6 py-3 mb-0 ${isCurrentWeek ? 'bg-yellow-50' : 'bg-gray-50'}`}>
+                        <p className={`text-center ${isCurrentWeek ? 'font-semibold text-lg' : 'font-medium'}`}>
+                          Week {i}
+                          {isCurrentWeek && ' (Current)'}
+                        </p>
+                        <p className="text-xs text-gray-500 text-center mt-1">
+                          {weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </p>
+                      </div>
+                      {i < totalWeeks && <div className="w-0.5 h-8 bg-gray-300"></div>}
+                    </React.Fragment>
+                  );
+                }
 
-              {/* Current week - highlighted */}
-              <div className="border-2 border-black rounded-lg px-8 py-4 mb-0 bg-yellow-50">
-                <p className="text-center font-semibold text-lg">Week 5: Ideation (Current)</p>
-              </div>
-              <div className="w-0.5 h-8 bg-gray-400"></div>
+                return (
+                  <>
+                    {/* Start marker */}
+                    <div className="border-2 border-green-500 rounded-lg px-8 py-4 mb-0 bg-green-50">
+                      <p className="text-center font-bold text-lg">Project Started</p>
+                      <p className="text-xs text-gray-600 text-center mt-1">
+                        {startDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                      </p>
+                    </div>
+                    <div className="w-0.5 h-8 bg-gray-300"></div>
 
-              {/* Future weeks */}
-              <div className="border-2 border-blue-400 rounded-lg px-6 py-3 mb-0 bg-blue-50">
-                <p className="text-center font-medium">Week 6: Invitation Content</p>
-              </div>
-              <div className="w-0.5 h-8 bg-gray-400"></div>
+                    {weeks}
 
-              <div className="border-2 border-blue-400 rounded-lg px-6 py-3 mb-0 bg-blue-50">
-                <p className="text-center font-medium">Week 7: Invitation Content</p>
-              </div>
-              <div className="w-0.5 h-8 bg-gray-400"></div>
-
-              <div className="border-2 border-green-500 rounded-lg px-6 py-3 mb-0 bg-green-50">
-                <p className="text-center font-medium">Week 8: MVP Creation</p>
-              </div>
-              <div className="w-0.5 h-8 bg-gray-400"></div>
-
-              <div className="border-2 border-green-500 rounded-lg px-6 py-3 mb-0 bg-green-50">
-                <p className="text-center font-medium">Week 9: MVP Creation</p>
-              </div>
+                    {/* Today marker */}
+                    <div className="border-2 border-blue-500 rounded-lg px-8 py-4 mt-0 bg-blue-50">
+                      <p className="text-center font-bold text-lg">Today</p>
+                      <p className="text-xs text-gray-600 text-center mt-1">
+                        {today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                      </p>
+                      <p className="text-sm text-gray-700 text-center mt-2">
+                        {totalWeeks} weeks in progress
+                      </p>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
+          </div>
+        </>
+      ) : activeTab === 'artists' ? (
+        <>
+          <div className="mb-8">
+            <button
+              onClick={() => setShowArtistForm(!showArtistForm)}
+              className="flex items-center gap-2 p-2 text-lg font-semibold hover:bg-gray-50 rounded"
+            >
+              <span className={`transform transition-transform ${showArtistForm ? 'rotate-45' : ''}`}>+</span>
+              Add Artist
+            </button>
+
+            {showArtistForm && (
+              <form onSubmit={handleArtistSubmit} className="mt-4 p-4 border rounded">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input
+                    type="text"
+                    placeholder="Artist Name"
+                    value={artistName}
+                    onChange={(e) => setArtistName(e.target.value)}
+                    required
+                    className="p-2 border rounded"
+                  />
+
+                  <input
+                    type="url"
+                    placeholder="Profile URL"
+                    value={artistUrl}
+                    onChange={(e) => setArtistUrl(e.target.value)}
+                    required
+                    className="p-2 border rounded"
+                  />
+
+                  <input
+                    type="text"
+                    placeholder="Specialty (optional)"
+                    value={artistSpecialty}
+                    onChange={(e) => setArtistSpecialty(e.target.value)}
+                    className="p-2 border rounded"
+                  />
+
+                  <textarea
+                    placeholder="Notes (optional)"
+                    value={artistNotes}
+                    onChange={(e) => setArtistNotes(e.target.value)}
+                    rows={1}
+                    className="p-2 border rounded"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="mt-4 px-4 py-2 bg-black text-white rounded disabled:opacity-50"
+                >
+                  {loading ? 'Adding...' : 'Add Artist'}
+                </button>
+              </form>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {artists.map((artist) => (
+              <div key={artist.id} className="p-4 border rounded">
+                <div className="flex justify-between items-start mb-2">
+                  <button
+                    onClick={() => deleteArtist(artist.id)}
+                    className="text-red-500 text-sm"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <a
+                  href={artist.profile_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold mb-1 text-blue-500 hover:underline block"
+                >
+                  {artist.name}
+                </a>
+
+                {artist.specialty && (
+                  <p className="text-sm text-gray-600 mb-1">
+                    <span className="font-medium">Specialty:</span> {artist.specialty}
+                  </p>
+                )}
+
+                {artist.notes && (
+                  <p className="text-sm text-gray-600">{artist.notes}</p>
+                )}
+
+                <p className="text-xs text-gray-400 mt-2">
+                  {new Date(artist.created_at).toLocaleDateString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : activeTab === 'sme' ? (
+        <>
+          <div className="mb-8">
+            <button
+              onClick={() => setShowSmeForm(!showSmeForm)}
+              className="flex items-center gap-2 p-2 text-lg font-semibold hover:bg-gray-50 rounded"
+            >
+              <span className={`transform transition-transform ${showSmeForm ? 'rotate-45' : ''}`}>+</span>
+              Add Subject Matter Expert
+            </button>
+
+            {showSmeForm && (
+              <form onSubmit={handleSmeSubmit} className="mt-4 p-4 border rounded">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input
+                    type="text"
+                    placeholder="Expert Name"
+                    value={smeName}
+                    onChange={(e) => setSmeName(e.target.value)}
+                    required
+                    className="p-2 border rounded"
+                  />
+
+                  <input
+                    type="url"
+                    placeholder="Profile URL"
+                    value={smeUrl}
+                    onChange={(e) => setSmeUrl(e.target.value)}
+                    required
+                    className="p-2 border rounded"
+                  />
+
+                  <input
+                    type="text"
+                    placeholder="Expertise (optional)"
+                    value={smeExpertise}
+                    onChange={(e) => setSmeExpertise(e.target.value)}
+                    className="p-2 border rounded"
+                  />
+
+                  <input
+                    type="text"
+                    placeholder="Organization (optional)"
+                    value={smeOrganization}
+                    onChange={(e) => setSmeOrganization(e.target.value)}
+                    className="p-2 border rounded"
+                  />
+
+                  <textarea
+                    placeholder="Notes (optional)"
+                    value={smeNotes}
+                    onChange={(e) => setSmeNotes(e.target.value)}
+                    rows={2}
+                    className="p-2 border rounded col-span-2"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="mt-4 px-4 py-2 bg-black text-white rounded disabled:opacity-50"
+                >
+                  {loading ? 'Adding...' : 'Add Expert'}
+                </button>
+              </form>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {smeList.map((expert) => (
+              <div key={expert.id} className="p-4 border rounded">
+                <div className="flex justify-between items-start mb-2">
+                  <button
+                    onClick={() => deleteSme(expert.id)}
+                    className="text-red-500 text-sm"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <a
+                  href={expert.profile_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold mb-1 text-blue-500 hover:underline block"
+                >
+                  {expert.name}
+                </a>
+
+                {expert.expertise && (
+                  <p className="text-sm text-gray-600 mb-1">
+                    <span className="font-medium">Expertise:</span> {expert.expertise}
+                  </p>
+                )}
+
+                {expert.organization && (
+                  <p className="text-sm text-gray-600 mb-1">
+                    <span className="font-medium">Organization:</span> {expert.organization}
+                  </p>
+                )}
+
+                {expert.notes && (
+                  <p className="text-sm text-gray-600">{expert.notes}</p>
+                )}
+
+                <p className="text-xs text-gray-400 mt-2">
+                  {new Date(expert.created_at).toLocaleDateString()}
+                </p>
+              </div>
+            ))}
           </div>
         </>
       ) : (
