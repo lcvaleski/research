@@ -121,7 +121,7 @@ export default function UnboundAdmin() {
       day: nextDay,
       title: `Day ${nextDay} Challenge`,
       description: "New challenge description",
-      enabled: false,
+      enabled: true,  // Changed to true so new challenges appear immediately
       order: nextDay,
       finalButtonText: "Start Challenge",
       cards: [
@@ -163,7 +163,7 @@ export default function UnboundAdmin() {
         day: nextDay,
         title: newChallenge.title,
         description: newChallenge.description,
-        enabled: newChallenge.enabled,
+        enabled: true,  // Ensure this is also true
         order: newChallenge.order
       });
 
@@ -180,60 +180,67 @@ export default function UnboundAdmin() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-xl">Loading challenges...</div>
+      <div className="max-w-6xl mx-auto p-4 flex items-center justify-center min-h-screen">
+        <div className="text-lg">Loading challenges...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-4">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">Unbound Content Editor</h1>
-            <div className="flex gap-4 items-center">
-              {saveStatus && (
-                <span className={`px-3 py-1 rounded ${
-                  saveStatus.includes('success') ? 'bg-green-100 text-green-700' :
-                  saveStatus.includes('failed') ? 'bg-red-100 text-red-700' :
-                  'bg-blue-100 text-blue-700'
-                }`}>
-                  {saveStatus}
-                </span>
-              )}
-              <button
-                onClick={() => createNewChallenge()}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-              >
-                + Add New Day
-              </button>
-              <button
-                onClick={() => loadChallenges()}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                Refresh All
-              </button>
-            </div>
+    <div className="max-w-6xl mx-auto p-4">
+      <div className="mb-4">
+        <a
+          href="/"
+          className="inline-block px-4 py-2 text-sm border border-black rounded hover:bg-gray-50 mb-4"
+        >
+          ← Back to Main
+        </a>
+      </div>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold mb-4">Unbound Content Editor</h1>
+        <div className="flex justify-between items-center">
+          <div className="flex gap-4">
+            <button
+              onClick={() => createNewChallenge()}
+              className="px-4 py-2 bg-black text-white rounded hover:opacity-80"
+            >
+              + Add New Day
+            </button>
+            <button
+              onClick={() => loadChallenges()}
+              className="px-4 py-2 border border-black rounded hover:bg-gray-50"
+            >
+              Refresh All
+            </button>
           </div>
+          {saveStatus && (
+            <span className={`px-3 py-1 rounded ${
+              saveStatus.includes('success') ? 'bg-green-100 text-green-700' :
+              saveStatus.includes('failed') ? 'bg-red-100 text-red-700' :
+              'bg-blue-100 text-blue-700'
+            }`}>
+              {saveStatus}
+            </span>
+          )}
         </div>
+      </div>
 
         {Object.entries(challenges)
           .sort((a, b) => a[1].day - b[1].day)
           .map(([dayId, challenge]) => (
-          <div key={dayId} className="bg-white rounded-lg shadow-lg p-6 mb-4">
+          <div key={dayId} className="p-4 border rounded mb-4">
             <div
               className="flex justify-between items-start cursor-pointer"
               onClick={() => setExpandedDay(expandedDay === challenge.day ? null : challenge.day)}
             >
               <div className="flex-1">
-                <h2 className="text-xl font-bold mb-2">
+                <h2 className="text-lg font-semibold mb-2">
                   Day {challenge.day}: {challenge.title}
                 </h2>
-                <p className="text-gray-600">{challenge.description}</p>
+                <p className="text-gray-600 text-sm">{challenge.description}</p>
               </div>
-              <div className="flex gap-2">
-                <label className="flex items-center gap-2">
+              <div className="flex gap-2 items-center">
+                <label className="flex items-center gap-2 text-sm">
                   <input
                     type="checkbox"
                     checked={challenge.enabled}
@@ -243,7 +250,7 @@ export default function UnboundAdmin() {
                   />
                   <span>Enabled</span>
                 </label>
-                <span className="text-2xl">{expandedDay === challenge.day ? '−' : '+'}</span>
+                <span className="text-xl text-gray-600">{expandedDay === challenge.day ? '−' : '+'}</span>
               </div>
             </div>
 
@@ -256,7 +263,7 @@ export default function UnboundAdmin() {
                       type="text"
                       value={challenge.title}
                       onChange={(e) => updateChallenge(dayId, 'title', e.target.value)}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full p-2 border rounded"
                     />
                   </div>
                   <div>
@@ -266,7 +273,7 @@ export default function UnboundAdmin() {
                       value={challenge.finalButtonText || 'Start Challenge'}
                       onChange={(e) => updateChallenge(dayId, 'finalButtonText', e.target.value)}
                       placeholder="e.g., Let's Do This"
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full p-2 border rounded"
                     />
                   </div>
                 </div>
@@ -296,7 +303,7 @@ export default function UnboundAdmin() {
                             type="text"
                             value={card.title}
                             onChange={(e) => updateCard(dayId, cardIndex, 'title', e.target.value)}
-                            className="w-full px-3 py-2 border rounded"
+                            className="w-full p-2 border rounded"
                           />
                         </div>
                       )}
@@ -306,7 +313,7 @@ export default function UnboundAdmin() {
                         <textarea
                           value={card.content}
                           onChange={(e) => updateCard(dayId, cardIndex, 'content', e.target.value)}
-                          className="w-full px-3 py-2 border rounded"
+                          className="w-full p-2 border rounded"
                           rows={3}
                         />
                       </div>
@@ -318,7 +325,7 @@ export default function UnboundAdmin() {
                             type="text"
                             value={card.buttonText || ''}
                             onChange={(e) => updateCard(dayId, cardIndex, 'buttonText', e.target.value)}
-                            className="w-full px-3 py-2 border rounded"
+                            className="w-full p-2 border rounded"
                             placeholder="e.g., Enable Reminders"
                           />
                         </div>
@@ -329,7 +336,7 @@ export default function UnboundAdmin() {
 
                 <button
                   onClick={() => saveChallenge(dayId)}
-                  className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-medium"
+                  className="w-full bg-black text-white py-3 rounded hover:opacity-80 font-medium"
                 >
                   Save Day {challenge.day} Changes
                 </button>

@@ -289,7 +289,16 @@ export default function Home() {
 
   return (
     <div className="max-w-6xl mx-auto p-4">
-      
+      <div className="flex justify-between items-center mb-4">
+        <div />
+        <a
+          href="/admin/unbound"
+          className="px-4 py-2 border border-black rounded hover:bg-gray-50 text-sm"
+        >
+          Unbound Admin
+        </a>
+      </div>
+
       <div className="flex gap-4 mb-6 border-b">
         <button
           onClick={() => setActiveTab('competitors')}
