@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, doc, setDoc } from 'firebase/firestore';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+// import { getAuth } from 'firebase/auth'; // Uncomment if you need auth later
 
 // Firebase configuration - replace with your config
 const firebaseConfig = {
@@ -18,7 +18,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const auth = getAuth(app);
+// const auth = getAuth(app); // Uncomment if you need auth later
 
 interface ChallengeCard {
   id: number;
@@ -79,7 +79,7 @@ export default function UnboundAdmin() {
     }
   };
 
-  const updateChallenge = (dayId: string, field: keyof Challenge, value: any) => {
+  const updateChallenge = (dayId: string, field: keyof Challenge, value: string | boolean | number) => {
     setChallenges(prev => ({
       ...prev,
       [dayId]: {
@@ -89,7 +89,7 @@ export default function UnboundAdmin() {
     }));
   };
 
-  const updateCard = (dayId: string, cardIndex: number, field: keyof ChallengeCard, value: any) => {
+  const updateCard = (dayId: string, cardIndex: number, field: keyof ChallengeCard, value: string | number) => {
     setChallenges(prev => ({
       ...prev,
       [dayId]: {
