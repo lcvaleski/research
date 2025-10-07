@@ -43,6 +43,7 @@ export default function UnboundAdmin() {
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
   const [expandedDay, setExpandedDay] = useState<number | null>(1);
+  const [showNewChallenge, setShowNewChallenge] = useState(false);
 
   // Load challenges on mount
   useEffect(() => {
@@ -70,7 +71,20 @@ export default function UnboundAdmin() {
   const saveChallenge = async (dayId: string) => {
     setSaveStatus('Saving...');
     try {
-      await setDoc(doc(db, 'challenges', dayId), challenges[dayId]);
+      const challenge = challenges[dayId];
+
+      // Save to challenges collection
+      await setDoc(doc(db, 'challenges', dayId), challenge);
+
+      // Also update courseContent collection to keep titles in sync
+      await setDoc(doc(db, 'courseContent', dayId), {
+        day: challenge.day,
+        title: challenge.title,
+        description: challenge.description,
+        enabled: challenge.enabled,
+        order: challenge.order
+      });
+
       setSaveStatus('Saved successfully!');
       setTimeout(() => setSaveStatus(''), 3000);
     } catch (error) {
@@ -101,6 +115,68 @@ export default function UnboundAdmin() {
     }));
   };
 
+  const createNewChallenge = async () => {
+    const nextDay = Math.max(...Object.values(challenges).map(c => c.day), 0) + 1;
+    const newChallenge: Challenge = {
+      day: nextDay,
+      title: `Day ${nextDay} Challenge`,
+      description: "New challenge description",
+      enabled: false,
+      order: nextDay,
+      finalButtonText: "Start Challenge",
+      cards: [
+        {
+          id: 1,
+          type: 'intro',
+          title: `Day ${nextDay} Intro`,
+          content: "Introduction content here..."
+        },
+        {
+          id: 2,
+          type: 'instruction',
+          title: 'How it works',
+          content: "Instructions here..."
+        },
+        {
+          id: 3,
+          type: 'notification',
+          title: 'Reminders',
+          content: "Reminder settings...",
+          buttonText: 'Enable Reminders'
+        },
+        {
+          id: 4,
+          type: 'why',
+          title: 'Why this works',
+          content: "Explanation here..."
+        }
+      ]
+    };
+
+    const dayId = `day${nextDay}`;
+
+    try {
+      await setDoc(doc(db, 'challenges', dayId), newChallenge);
+
+      // Also create courseContent entry
+      await setDoc(doc(db, 'courseContent', dayId), {
+        day: nextDay,
+        title: newChallenge.title,
+        description: newChallenge.description,
+        enabled: newChallenge.enabled,
+        order: newChallenge.order
+      });
+
+      setChallenges(prev => ({ ...prev, [dayId]: newChallenge }));
+      setExpandedDay(nextDay);
+      setShowNewChallenge(false);
+      setSaveStatus(`Day ${nextDay} created successfully!`);
+    } catch (error) {
+      console.error('Error creating challenge:', error);
+      setSaveStatus('Failed to create challenge');
+    }
+  };
+
 
   if (loading) {
     return (
@@ -126,6 +202,12 @@ export default function UnboundAdmin() {
                   {saveStatus}
                 </span>
               )}
+              <button
+                onClick={() => createNewChallenge()}
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              >
+                + Add New Day
+              </button>
               <button
                 onClick={() => loadChallenges()}
                 className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
