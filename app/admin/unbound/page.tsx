@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, doc, setDoc } from 'firebase/firestore';
 // import { getAuth } from 'firebase/auth'; // Uncomment if you need auth later
@@ -43,7 +44,6 @@ export default function UnboundAdmin() {
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
   const [expandedDay, setExpandedDay] = useState<number | null>(1);
-  const [showNewChallenge, setShowNewChallenge] = useState(false);
 
   // Load challenges on mount
   useEffect(() => {
@@ -169,7 +169,6 @@ export default function UnboundAdmin() {
 
       setChallenges(prev => ({ ...prev, [dayId]: newChallenge }));
       setExpandedDay(nextDay);
-      setShowNewChallenge(false);
       setSaveStatus(`Day ${nextDay} created successfully!`);
     } catch (error) {
       console.error('Error creating challenge:', error);
@@ -189,12 +188,12 @@ export default function UnboundAdmin() {
   return (
     <div className="max-w-6xl mx-auto p-4">
       <div className="mb-4">
-        <a
+        <Link
           href="/"
           className="inline-block px-4 py-2 text-sm border border-black rounded hover:bg-gray-50 mb-4"
         >
           ← Back to Main
-        </a>
+        </Link>
       </div>
       <div className="mb-8">
         <h1 className="text-2xl font-bold mb-4">Unbound Content Editor</h1>
@@ -225,6 +224,7 @@ export default function UnboundAdmin() {
         </div>
       </div>
 
+      <div>
         {Object.entries(challenges)
           .sort((a, b) => a[1].day - b[1].day)
           .map(([dayId, challenge]) => (
