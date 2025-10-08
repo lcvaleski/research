@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, doc, setDoc } from 'firebase/firestore';
@@ -144,6 +144,51 @@ export default function UnboundAdmin() {
         cards: prev[dayId].cards.filter((_, index) => index !== cardIndex)
       }
     }));
+  };
+
+  const moveCard = (dayId: string, fromIndex: number, direction: 'up' | 'down') => {
+    setChallenges(prev => {
+      const challenge = prev[dayId];
+      const newCards = [...challenge.cards];
+      const toIndex = direction === 'up' ? fromIndex - 1 : fromIndex + 1;
+
+      if (toIndex < 0 || toIndex >= newCards.length) return prev;
+
+      // Swap the cards
+      [newCards[fromIndex], newCards[toIndex]] = [newCards[toIndex], newCards[fromIndex]];
+
+      return {
+        ...prev,
+        [dayId]: {
+          ...challenge,
+          cards: newCards
+        }
+      };
+    });
+  };
+
+  const insertCardAt = (dayId: string, position: number) => {
+    setChallenges(prev => {
+      const challenge = prev[dayId];
+      const newCardId = Math.max(...challenge.cards.map(c => c.id), 0) + 1;
+      const newCard: ChallengeCard = {
+        id: newCardId,
+        type: 'custom',
+        title: 'New Screen',
+        content: 'Enter your content here...',
+      };
+
+      const newCards = [...challenge.cards];
+      newCards.splice(position, 0, newCard);
+
+      return {
+        ...prev,
+        [dayId]: {
+          ...challenge,
+          cards: newCards
+        }
+      };
+    });
   };
 
   const createNewChallenge = async () => {
@@ -326,63 +371,118 @@ export default function UnboundAdmin() {
                       onClick={() => addCard(dayId)}
                       className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
                     >
-                      + Add Card
+                      + Add Card at End
                     </button>
                   </div>
+
+                  {/* Insert button at beginning */}
+                  <div className="flex justify-center">
+                    <button
+                      onClick={() => insertCardAt(dayId, 0)}
+                      className="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
+                    >
+                      + Insert Card Here
+                    </button>
+                  </div>
+
                   {challenge.cards.map((card, cardIndex) => (
-                    <div key={cardIndex} className="bg-gray-50 p-4 rounded relative">
-                      <button
-                        onClick={() => removeCard(dayId, cardIndex)}
-                        className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold text-lg"
-                        title="Remove card"
-                      >
-                        ×
-                      </button>
+                    <React.Fragment key={cardIndex}>
+                      <div className="bg-gray-50 p-4 rounded relative">
+                        {/* Card controls */}
+                        <div className="absolute top-2 right-2 flex gap-2">
+                          {/* Move buttons */}
+                          <button
+                            onClick={() => moveCard(dayId, cardIndex, 'up')}
+                            disabled={cardIndex === 0}
+                            className={`px-2 py-1 text-sm ${
+                              cardIndex === 0
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : 'text-blue-600 hover:text-blue-800'
+                            }`}
+                            title="Move up"
+                          >
+                            ↑
+                          </button>
+                          <button
+                            onClick={() => moveCard(dayId, cardIndex, 'down')}
+                            disabled={cardIndex === challenge.cards.length - 1}
+                            className={`px-2 py-1 text-sm ${
+                              cardIndex === challenge.cards.length - 1
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : 'text-blue-600 hover:text-blue-800'
+                            }`}
+                            title="Move down"
+                          >
+                            ↓
+                          </button>
+                          <button
+                            onClick={() => removeCard(dayId, cardIndex)}
+                            className="text-red-500 hover:text-red-700 font-bold text-lg"
+                            title="Remove card"
+                          >
+                            ×
+                          </button>
+                        </div>
 
-                      <div className="grid grid-cols-2 gap-4 mb-3">
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Card Type</label>
-                          <input
-                            type="text"
-                            value={card.type}
-                            onChange={(e) => updateCard(dayId, cardIndex, 'type', e.target.value)}
+                        <div className="mb-2 text-sm font-medium text-gray-600">
+                          Card {cardIndex + 1}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 mb-3">
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Card Type</label>
+                            <input
+                              type="text"
+                              value={card.type}
+                              onChange={(e) => updateCard(dayId, cardIndex, 'type', e.target.value)}
+                              className="w-full p-2 border rounded"
+                              placeholder="e.g., intro, instruction, meditation, etc."
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Title (optional)</label>
+                            <input
+                              type="text"
+                              value={card.title || ''}
+                              onChange={(e) => updateCard(dayId, cardIndex, 'title', e.target.value)}
+                              className="w-full p-2 border rounded"
+                              placeholder="Screen title"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="mb-3">
+                          <label className="block text-sm font-medium mb-1">Content</label>
+                          <textarea
+                            value={card.content}
+                            onChange={(e) => updateCard(dayId, cardIndex, 'content', e.target.value)}
                             className="w-full p-2 border rounded"
-                            placeholder="e.g., intro, instruction, meditation, etc."
+                            rows={3}
                           />
                         </div>
+
                         <div>
-                          <label className="block text-sm font-medium mb-1">Title (optional)</label>
+                          <label className="block text-sm font-medium mb-1">Button Text (optional)</label>
                           <input
                             type="text"
-                            value={card.title || ''}
-                            onChange={(e) => updateCard(dayId, cardIndex, 'title', e.target.value)}
+                            value={card.buttonText || ''}
+                            onChange={(e) => updateCard(dayId, cardIndex, 'buttonText', e.target.value)}
                             className="w-full p-2 border rounded"
-                            placeholder="Screen title"
+                            placeholder="e.g., Continue, Enable Reminders, Let's Go"
                           />
                         </div>
                       </div>
 
-                      <div className="mb-3">
-                        <label className="block text-sm font-medium mb-1">Content</label>
-                        <textarea
-                          value={card.content}
-                          onChange={(e) => updateCard(dayId, cardIndex, 'content', e.target.value)}
-                          className="w-full p-2 border rounded"
-                          rows={3}
-                        />
+                      {/* Insert button between cards */}
+                      <div className="flex justify-center">
+                        <button
+                          onClick={() => insertCardAt(dayId, cardIndex + 1)}
+                          className="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
+                        >
+                          + Insert Card Here
+                        </button>
                       </div>
-
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Button Text (optional)</label>
-                        <input
-                          type="text"
-                          value={card.buttonText || ''}
-                          onChange={(e) => updateCard(dayId, cardIndex, 'buttonText', e.target.value)}
-                          className="w-full p-2 border rounded"
-                          placeholder="e.g., Continue, Enable Reminders, Let's Go"
-                        />
-                      </div>
-                    </div>
+                    </React.Fragment>
                   ))}
                 </div>
 
