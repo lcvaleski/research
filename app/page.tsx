@@ -339,59 +339,14 @@ export default function Home() {
       </div>
 
       {activeTab === 'invitations' ? (
-        <>
-          <div className="mb-8">
-            <button
-              onClick={() => setShowInvitationForm(!showInvitationForm)}
-              className="flex items-center gap-2 p-2 text-lg font-semibold hover:bg-gray-50 rounded"
-            >
-              <span className={`transform transition-transform ${showInvitationForm ? 'rotate-45' : ''}`}>+</span>
-              Add Content Idea
-            </button>
-
-            {showInvitationForm && (
-              <form onSubmit={handleInvitationSubmit} className="mt-4 p-4 border rounded">
-                <textarea
-                  placeholder="Content idea..."
-                  value={invContent}
-                  onChange={(e) => setInvContent(e.target.value)}
-                  required
-                  rows={4}
-                  className="w-full p-2 mb-3 border rounded"
-                />
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-4 py-2 bg-black text-white rounded disabled:opacity-50"
-                >
-                  {loading ? 'Saving...' : 'Save Idea'}
-                </button>
-              </form>
-            )}
-          </div>
-
-          <div className="space-y-4">
-            {invitations.map((item) => (
-              <div key={item.id} className="p-4 border rounded">
-                <div className="flex justify-between items-start mb-2">
-                  <button
-                    onClick={() => deleteInvitation(item.id)}
-                    className="text-red-500 text-sm ml-auto"
-                  >
-                    ×
-                  </button>
-                </div>
-
-                <p className="text-gray-700 whitespace-pre-wrap">{item.content}</p>
-
-                <p className="text-xs text-gray-400 mt-2">
-                  {new Date(item.created_at).toLocaleString()}
-                </p>
-              </div>
-            ))}
-          </div>
-        </>
+        <div className="flex justify-center items-center min-h-[400px]">
+          <a
+            href="/admin/unbound"
+            className="px-6 py-3 bg-black text-white rounded hover:bg-gray-800 text-lg"
+          >
+            Go to Unbound Admin →
+          </a>
+        </div>
       ) : activeTab === 'competitors' ? (
         <>
 
