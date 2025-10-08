@@ -115,6 +115,37 @@ export default function UnboundAdmin() {
     }));
   };
 
+  const addCard = (dayId: string) => {
+    setChallenges(prev => {
+      const challenge = prev[dayId];
+      const newCardId = Math.max(...challenge.cards.map(c => c.id), 0) + 1;
+      const newCard: ChallengeCard = {
+        id: newCardId,
+        type: 'custom', // Default type, user can change it
+        title: 'New Screen',
+        content: 'Enter your content here...',
+      };
+
+      return {
+        ...prev,
+        [dayId]: {
+          ...challenge,
+          cards: [...challenge.cards, newCard]
+        }
+      };
+    });
+  };
+
+  const removeCard = (dayId: string, cardIndex: number) => {
+    setChallenges(prev => ({
+      ...prev,
+      [dayId]: {
+        ...prev[dayId],
+        cards: prev[dayId].cards.filter((_, index) => index !== cardIndex)
+      }
+    }));
+  };
+
   const createNewChallenge = async () => {
     const nextDay = Math.max(...Object.values(challenges).map(c => c.day), 0) + 1;
     const newChallenge: Challenge = {
@@ -289,24 +320,47 @@ export default function UnboundAdmin() {
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="font-bold text-lg">Challenge Cards</h3>
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-bold text-lg">Challenge Cards</h3>
+                    <button
+                      onClick={() => addCard(dayId)}
+                      className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+                    >
+                      + Add Card
+                    </button>
+                  </div>
                   {challenge.cards.map((card, cardIndex) => (
-                    <div key={cardIndex} className="bg-gray-50 p-4 rounded">
-                      <div className="mb-2 text-sm font-medium text-gray-600">
-                        Card {cardIndex + 1}: {card.type}
-                      </div>
+                    <div key={cardIndex} className="bg-gray-50 p-4 rounded relative">
+                      <button
+                        onClick={() => removeCard(dayId, cardIndex)}
+                        className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold text-lg"
+                        title="Remove card"
+                      >
+                        ×
+                      </button>
 
-                      {card.title && (
-                        <div className="mb-3">
-                          <label className="block text-sm font-medium mb-1">Title</label>
+                      <div className="grid grid-cols-2 gap-4 mb-3">
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Card Type</label>
                           <input
                             type="text"
-                            value={card.title}
-                            onChange={(e) => updateCard(dayId, cardIndex, 'title', e.target.value)}
+                            value={card.type}
+                            onChange={(e) => updateCard(dayId, cardIndex, 'type', e.target.value)}
                             className="w-full p-2 border rounded"
+                            placeholder="e.g., intro, instruction, meditation, etc."
                           />
                         </div>
-                      )}
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Title (optional)</label>
+                          <input
+                            type="text"
+                            value={card.title || ''}
+                            onChange={(e) => updateCard(dayId, cardIndex, 'title', e.target.value)}
+                            className="w-full p-2 border rounded"
+                            placeholder="Screen title"
+                          />
+                        </div>
+                      </div>
 
                       <div className="mb-3">
                         <label className="block text-sm font-medium mb-1">Content</label>
@@ -318,18 +372,16 @@ export default function UnboundAdmin() {
                         />
                       </div>
 
-                      {card.type === 'notification' && (
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Button Text</label>
-                          <input
-                            type="text"
-                            value={card.buttonText || ''}
-                            onChange={(e) => updateCard(dayId, cardIndex, 'buttonText', e.target.value)}
-                            className="w-full p-2 border rounded"
-                            placeholder="e.g., Enable Reminders"
-                          />
-                        </div>
-                      )}
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Button Text (optional)</label>
+                        <input
+                          type="text"
+                          value={card.buttonText || ''}
+                          onChange={(e) => updateCard(dayId, cardIndex, 'buttonText', e.target.value)}
+                          className="w-full p-2 border rounded"
+                          placeholder="e.g., Continue, Enable Reminders, Let's Go"
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
