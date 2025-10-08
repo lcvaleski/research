@@ -27,6 +27,7 @@ interface ChallengeCard {
   title?: string;
   content: string;
   buttonText?: string;
+  imageUrl?: string;
 }
 
 interface Challenge {
@@ -461,16 +462,46 @@ export default function UnboundAdmin() {
                           />
                         </div>
 
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Button Text (optional)</label>
-                          <input
-                            type="text"
-                            value={card.buttonText || ''}
-                            onChange={(e) => updateCard(dayId, cardIndex, 'buttonText', e.target.value)}
-                            className="w-full p-2 border rounded"
-                            placeholder="e.g., Continue, Enable Reminders, Let's Go"
-                          />
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Button Text (optional)</label>
+                            <input
+                              type="text"
+                              value={card.buttonText || ''}
+                              onChange={(e) => updateCard(dayId, cardIndex, 'buttonText', e.target.value)}
+                              className="w-full p-2 border rounded"
+                              placeholder="e.g., Continue, Enable Reminders"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Image URL (optional)</label>
+                            <input
+                              type="text"
+                              value={card.imageUrl || ''}
+                              onChange={(e) => updateCard(dayId, cardIndex, 'imageUrl', e.target.value)}
+                              className="w-full p-2 border rounded"
+                              placeholder="https://example.com/image.png"
+                            />
+                          </div>
                         </div>
+
+                        {/* Preview image if URL is provided */}
+                        {card.imageUrl && (
+                          <div className="mt-3">
+                            <label className="block text-sm font-medium mb-1">Image Preview</label>
+                            <img
+                              src={card.imageUrl}
+                              alt="Preview"
+                              className="max-w-full h-32 object-contain border rounded"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                              onLoad={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'block';
+                              }}
+                            />
+                          </div>
+                        )}
                       </div>
 
                       {/* Insert button between cards */}
