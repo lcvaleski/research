@@ -30,6 +30,13 @@ interface ChallengeCard {
   imageUrl?: string;
 }
 
+interface NotificationMessage {
+  time: 'morning' | 'afternoon' | 'evening';
+  hour: number;
+  title: string;
+  body: string;
+}
+
 interface Challenge {
   day: number;
   title: string;
@@ -38,6 +45,7 @@ interface Challenge {
   order: number;
   finalButtonText?: string;
   cards: ChallengeCard[];
+  notifications?: NotificationMessage[];
 }
 
 export default function UnboundAdmin() {
@@ -114,6 +122,76 @@ export default function UnboundAdmin() {
         )
       }
     }));
+  };
+
+  const updateNotification = (dayId: string, notifIndex: number, field: keyof NotificationMessage, value: string | number) => {
+    setChallenges(prev => {
+      const challenge = prev[dayId];
+      const notifications = challenge.notifications || [];
+      const updatedNotifications = notifications.map((notif, index) =>
+        index === notifIndex ? { ...notif, [field]: value } : notif
+      );
+
+      return {
+        ...prev,
+        [dayId]: {
+          ...challenge,
+          notifications: updatedNotifications
+        }
+      };
+    });
+  };
+
+  const addNotification = (dayId: string) => {
+    setChallenges(prev => {
+      const challenge = prev[dayId];
+      const existingNotifications = challenge.notifications || [];
+
+      // Determine the next time slot
+      let nextTime: 'morning' | 'afternoon' | 'evening' = 'morning';
+      let nextHour = 9;
+
+      if (existingNotifications.length > 0) {
+        const lastNotif = existingNotifications[existingNotifications.length - 1];
+        if (lastNotif.time === 'morning') {
+          nextTime = 'afternoon';
+          nextHour = 14;
+        } else if (lastNotif.time === 'afternoon') {
+          nextTime = 'evening';
+          nextHour = 19;
+        }
+      }
+
+      const newNotification: NotificationMessage = {
+        time: nextTime,
+        hour: nextHour,
+        title: `Day ${challenge.day} ${nextTime.charAt(0).toUpperCase() + nextTime.slice(1)}`,
+        body: 'Enter notification message here...'
+      };
+
+      return {
+        ...prev,
+        [dayId]: {
+          ...challenge,
+          notifications: [...existingNotifications, newNotification]
+        }
+      };
+    });
+  };
+
+  const removeNotification = (dayId: string, notifIndex: number) => {
+    setChallenges(prev => {
+      const challenge = prev[dayId];
+      const notifications = challenge.notifications || [];
+
+      return {
+        ...prev,
+        [dayId]: {
+          ...challenge,
+          notifications: notifications.filter((_, index) => index !== notifIndex)
+        }
+      };
+    });
   };
 
   const addCard = (dayId: string) => {
@@ -515,6 +593,99 @@ export default function UnboundAdmin() {
                       </div>
                     </React.Fragment>
                   ))}
+                </div>
+
+                {/* Notifications Section */}
+                <div className="space-y-4 border-t pt-4 mt-6">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-bold text-lg">Daily Notifications</h3>
+                    <button
+                      onClick={() => addNotification(dayId)}
+                      className="px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700"
+                    >
+                      + Add Notification
+                    </button>
+                  </div>
+
+                  {(!challenge.notifications || challenge.notifications.length === 0) ? (
+                    <div className="text-gray-500 text-sm italic">
+                      No notifications configured. Add notifications to send reminders throughout the day.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {challenge.notifications.map((notification, notifIndex) => (
+                        <div key={notifIndex} className="bg-purple-50 p-4 rounded relative">
+                          <div className="absolute top-2 right-2">
+                            <button
+                              onClick={() => removeNotification(dayId, notifIndex)}
+                              className="text-red-500 hover:text-red-700 font-bold text-lg"
+                              title="Remove notification"
+                            >
+                              ×
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-3 mb-3">
+                            <div>
+                              <label className="block text-sm font-medium mb-1">Time</label>
+                              <select
+                                value={notification.time}
+                                onChange={(e) => updateNotification(dayId, notifIndex, 'time', e.target.value)}
+                                className="w-full p-2 border rounded"
+                              >
+                                <option value="morning">Morning</option>
+                                <option value="afternoon">Afternoon</option>
+                                <option value="evening">Evening</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium mb-1">Hour (24h)</label>
+                              <input
+                                type="number"
+                                min="0"
+                                max="23"
+                                value={notification.hour}
+                                onChange={(e) => updateNotification(dayId, notifIndex, 'hour', parseInt(e.target.value))}
+                                className="w-full p-2 border rounded"
+                                placeholder="9"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium mb-1">Time Preview</label>
+                              <div className="p-2 bg-white border rounded text-center">
+                                {notification.hour < 12 ?
+                                  `${notification.hour === 0 ? 12 : notification.hour}:00 AM` :
+                                  `${notification.hour === 12 ? 12 : notification.hour - 12}:00 PM`
+                                }
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mb-3">
+                            <label className="block text-sm font-medium mb-1">Notification Title</label>
+                            <input
+                              type="text"
+                              value={notification.title}
+                              onChange={(e) => updateNotification(dayId, notifIndex, 'title', e.target.value)}
+                              className="w-full p-2 border rounded"
+                              placeholder="Day 1: One Word Check-In"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Message Body</label>
+                            <textarea
+                              value={notification.body}
+                              onChange={(e) => updateNotification(dayId, notifIndex, 'body', e.target.value)}
+                              className="w-full p-2 border rounded"
+                              rows={2}
+                              placeholder="What's one word to describe your emotional state right now?"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <button
