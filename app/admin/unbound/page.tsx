@@ -24,7 +24,7 @@ const db = getFirestore(app);
 interface ChallengeCard {
   id: number;
   type: string;
-  title?: string;
+  title: string;
   content: string;
   buttonText?: string;
   imageUrl?: string;
@@ -507,27 +507,16 @@ export default function UnboundAdmin() {
                           Card {cardIndex + 1}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 mb-3">
-                          <div>
-                            <label className="block text-sm font-medium mb-1">Card Type</label>
-                            <input
-                              type="text"
-                              value={card.type}
-                              onChange={(e) => updateCard(dayId, cardIndex, 'type', e.target.value)}
-                              className="w-full p-2 border rounded"
-                              placeholder="e.g., intro, instruction, meditation, etc."
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium mb-1">Title (optional)</label>
-                            <input
-                              type="text"
-                              value={card.title || ''}
-                              onChange={(e) => updateCard(dayId, cardIndex, 'title', e.target.value)}
-                              className="w-full p-2 border rounded"
-                              placeholder="Screen title"
-                            />
-                          </div>
+                        <div className="mb-3">
+                          <label className="block text-sm font-medium mb-1">Title</label>
+                          <input
+                            type="text"
+                            value={card.title || ''}
+                            onChange={(e) => updateCard(dayId, cardIndex, 'title', e.target.value)}
+                            className="w-full p-2 border rounded"
+                            placeholder="Screen title"
+                            required
+                          />
                         </div>
 
                         <div className="mb-3">
