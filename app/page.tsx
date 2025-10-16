@@ -23,12 +23,6 @@ type Research = {
 };
 
 
-type Invitation = {
-  id: string;
-  content: string;
-  created_at: string;
-};
-
 
 type Artist = {
   id: string;
@@ -52,10 +46,9 @@ type SME = {
 
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'competitors' | 'research' | 'invitations' | 'timeline' | 'artists' | 'sme'>('research');
+  const [activeTab, setActiveTab] = useState<'competitors' | 'research' | 'timeline' | 'artists' | 'sme'>('research');
   const [competitors, setCompetitors] = useState<Competitor[]>([]);
   const [research, setResearch] = useState<Research[]>([]);
-  const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [artists, setArtists] = useState<Artist[]>([]);
   const [smeList, setSmeList] = useState<SME[]>([]);
   
@@ -64,11 +57,7 @@ export default function Home() {
   const [compUrl, setCompUrl] = useState('');
   const [compNotes, setCompNotes] = useState('');
   
-  // Research form state
-  const [resContent, setResContent] = useState('');
 
-  // Invitation form state
-  const [invContent, setInvContent] = useState('');
 
   // Artist form state
   const [artistName, setArtistName] = useState('');
@@ -85,8 +74,6 @@ export default function Home() {
 
   const [loading, setLoading] = useState(false);
   const [showCompetitorForm, setShowCompetitorForm] = useState(false);
-  const [showThoughtsForm, setShowThoughtsForm] = useState(false);
-  const [showInvitationForm, setShowInvitationForm] = useState(false);
   const [showArtistForm, setShowArtistForm] = useState(false);
   const [showSmeForm, setShowSmeForm] = useState(false);
 
@@ -95,7 +82,6 @@ export default function Home() {
   useEffect(() => {
     loadCompetitors();
     loadResearch();
-    loadInvitations();
     loadArtists();
     loadSmeList();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -119,14 +105,6 @@ export default function Home() {
     if (data) setResearch(data);
   };
 
-  const loadInvitations = async () => {
-    const { data } = await supabase
-      .from('invitations')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (data) setInvitations(data);
-  };
 
   const loadArtists = async () => {
     const { data } = await supabase
@@ -174,42 +152,7 @@ export default function Home() {
     setLoading(false);
   };
 
-  const handleResearchSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
 
-    const { error } = await supabase
-      .from('research')
-      .insert([{
-        type: 'thought',
-        title: resContent.substring(0, 50) + (resContent.length > 50 ? '...' : ''),
-        content: resContent,
-        url: null
-      }]);
-
-    if (!error) {
-      setResContent('');
-      setShowThoughtsForm(false);
-      await loadResearch();
-    }
-    setLoading(false);
-  };
-
-  const handleInvitationSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    const { error } = await supabase
-      .from('invitations')
-      .insert([{ content: invContent }]);
-
-    if (!error) {
-      setInvContent('');
-      setShowInvitationForm(false);
-      await loadInvitations();
-    }
-    setLoading(false);
-  };
 
   const deleteCompetitor = async (id: string) => {
     await supabase.from('competitors').delete().eq('id', id);
@@ -221,10 +164,6 @@ export default function Home() {
     await loadResearch();
   };
 
-  const deleteInvitation = async (id: string) => {
-    await supabase.from('invitations').delete().eq('id', id);
-    await loadInvitations();
-  };
 
   const handleArtistSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -310,13 +249,7 @@ export default function Home() {
           onClick={() => setActiveTab('research')}
           className={`pb-2 px-1 ${activeTab === 'research' ? 'border-b-2 border-black font-semibold' : ''}`}
         >
-          Thoughts
-        </button>
-        <button
-          onClick={() => setActiveTab('invitations')}
-          className={`pb-2 px-1 ${activeTab === 'invitations' ? 'border-b-2 border-black font-semibold' : ''}`}
-        >
-          Invitations
+          Research
         </button>
         <button
           onClick={() => setActiveTab('timeline')}
@@ -338,16 +271,7 @@ export default function Home() {
         </button>
       </div>
 
-      {activeTab === 'invitations' ? (
-        <div className="flex justify-center items-center min-h-[400px]">
-          <a
-            href="/admin/unbound"
-            className="px-6 py-3 bg-black text-white rounded hover:bg-gray-800 text-lg"
-          >
-            Go to Unbound Admin →
-          </a>
-        </div>
-      ) : activeTab === 'competitors' ? (
+      {activeTab === 'competitors' ? (
         <>
 
           <div className="mb-8">
@@ -714,38 +638,6 @@ export default function Home() {
         </>
       ) : (
         <>
-          <div className="mb-8">
-            <button
-              onClick={() => setShowThoughtsForm(!showThoughtsForm)}
-              className="flex items-center gap-2 p-2 text-lg font-semibold hover:bg-gray-50 rounded"
-            >
-              <span className={`transform transition-transform ${showThoughtsForm ? 'rotate-45' : ''}`}>+</span>
-              Add Thought
-            </button>
-            
-            {showThoughtsForm && (
-              <form onSubmit={handleResearchSubmit} className="mt-4 p-4 border rounded">
-                <textarea
-                  placeholder="What's on your mind?"
-                  value={resContent}
-                  onChange={(e) => setResContent(e.target.value)}
-                  required
-                  rows={4}
-                  className="w-full p-2 mb-3 border rounded"
-                />
-
-                <button 
-                  type="submit" 
-                  disabled={loading}
-                  className="px-4 py-2 bg-black text-white rounded disabled:opacity-50"
-                >
-                  {loading ? 'Saving...' : 'Save Thought'}
-                </button>
-              </form>
-            )}
-          </div>
-
-
           <div className="space-y-4">
             {research.map((item) => (
               <div key={item.id} className="p-4 border rounded">
