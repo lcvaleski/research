@@ -246,12 +246,6 @@ export default function Home() {
           Competitors
         </button>
         <button
-          onClick={() => setActiveTab('research')}
-          className={`pb-2 px-1 ${activeTab === 'research' ? 'border-b-2 border-black font-semibold' : ''}`}
-        >
-          Research
-        </button>
-        <button
           onClick={() => setActiveTab('timeline')}
           className={`pb-2 px-1 ${activeTab === 'timeline' ? 'border-b-2 border-black font-semibold' : ''}`}
         >
@@ -631,29 +625,6 @@ export default function Home() {
 
                 <p className="text-xs text-gray-400 mt-2">
                   {new Date(expert.created_at).toLocaleDateString()}
-                </p>
-              </div>
-            ))}
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="space-y-4">
-            {research.map((item) => (
-              <div key={item.id} className="p-4 border rounded">
-                <div className="flex justify-between items-start mb-2">
-                  <button 
-                    onClick={() => deleteResearch(item.id)}
-                    className="text-red-500 text-sm ml-auto"
-                  >
-                    ×
-                  </button>
-                </div>
-                
-                <p className="text-gray-700 whitespace-pre-wrap">{item.content}</p>
-                
-                <p className="text-xs text-gray-400 mt-2">
-                  {new Date(item.created_at).toLocaleString()}
                 </p>
               </div>
             ))}
