@@ -13,14 +13,6 @@ type Competitor = {
 };
 
 
-type Research = {
-  id: string;
-  type: 'link' | 'thought';
-  title: string;
-  content: string;
-  url?: string;
-  created_at: string;
-};
 
 
 
@@ -48,7 +40,6 @@ type SME = {
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'competitors' | 'research' | 'timeline' | 'artists' | 'sme'>('research');
   const [competitors, setCompetitors] = useState<Competitor[]>([]);
-  const [research, setResearch] = useState<Research[]>([]);
   const [artists, setArtists] = useState<Artist[]>([]);
   const [smeList, setSmeList] = useState<SME[]>([]);
   
@@ -81,7 +72,6 @@ export default function Home() {
 
   useEffect(() => {
     loadCompetitors();
-    loadResearch();
     loadArtists();
     loadSmeList();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -96,14 +86,6 @@ export default function Home() {
     if (data) setCompetitors(data);
   };
 
-  const loadResearch = async () => {
-    const { data } = await supabase
-      .from('research')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (data) setResearch(data);
-  };
 
 
   const loadArtists = async () => {
@@ -159,10 +141,6 @@ export default function Home() {
     await loadCompetitors();
   };
 
-  const deleteResearch = async (id: string) => {
-    await supabase.from('research').delete().eq('id', id);
-    await loadResearch();
-  };
 
 
   const handleArtistSubmit = async (e: React.FormEvent) => {
